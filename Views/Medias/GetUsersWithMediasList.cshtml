@@ -1,0 +1,20 @@
+@{
+    int selectedUserId = Session["SelectedUserId"] != null ? (int)Session["SelectedUserId"] : 0;
+    
+    // Obtenir tous les usagers qui ont au moins une vidéo
+    var usersWithMedias = DB.Medias.ToList()
+        .Select(m => m.OwnerId)
+        .Distinct()
+        .Select(ownerId => DB.Users.Get(ownerId))
+        .Where(u => u != null)
+        .OrderBy(u => u.Name)
+        .ToList();
+}
+
+<select id="userFilterSelect" class="section roundedBorder">
+    <option value="0" @(selectedUserId == 0 ? "selected" : "")>Tous les usagers</option>
+    @foreach (var user in usersWithMedias)
+    {
+        <option value="@user.Id" @(selectedUserId == user.Id ? "selected" : "")>@user.Name</option>
+    }
+</select>

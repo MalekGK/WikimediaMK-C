@@ -1,0 +1,102 @@
+﻿@model Models.Media
+@{
+    ViewBag.PageTitle = "Détails";
+    string search = Session["Search"] != null ? ((bool)Session["Search"]).ToString() : false.ToString();
+    string SearchString = Session["SearchString"] != null ? (string)Session["SearchString"] : "";
+}
+
+<div id="detailsPanel" class="detailsPanel">
+    <!-- auto refreshed -->
+</div>
+
+@section Scripts {
+    <script>
+        $(() => {
+            newSession(600);
+            mediaDetails_ARP = new AutoRefreshedPanel("detailsPanel", "/Medias/GetMediaDetails", 5, mediaDetailsPostRefresh);
+            sessionStorage.setItem("RestoreScrollPosition", "1");
+
+            // Charger les informations de likes au démarrage
+            loadLikesInfo();
+
+            // Gérer les clics sur l'icône de like dans le header
+            setupLikeClickHandler();
+        })
+
+        function loadLikesInfo() {
+            let mediaId = $(".toggleLikeCmd").attr("mediaId");
+            if (mediaId) {
+                $.ajax({
+                    url: "/Medias/GetLikesInfo",
+                    type: "GET",
+                    data: { mediaId: mediaId },
+                    success: function (response) {
+                        if (response.success) {
+                            updateLikesDisplay(response);
+                        }
+                    }
+                });
+            }
+        }
+
+        function setupLikeClickHandler() {
+            $(".toggleLikeCmd").off();
+            $(".toggleLikeCmd").click(function (e) {
+                e.preventDefault();
+                let icon = $(this);
+                let mediaId = icon.attr("mediaId");
+
+                $.ajax({
+                    url: "/Medias/ToggleLike",
+                    type: "POST",
+                    data: { mediaId: mediaId },
+                    success: function (response) {
+                        if (response.success) {
+                            updateLikesDisplay(response);
+                        }
+                    },
+                    error: function () {
+                        console.error("Erreur lors du toggle du like");
+                    }
+                });
+            });
+        }
+
+        function updateLikesDisplay(response) {
+            let icon = $(".toggleLikeCmd");
+            icon.siblings('.likesCount').text(response.likesCount);
+
+            let tooltipText = response.likedByUsers && response.likedByUsers.length > 0 
+                ? "Usagers qui ont aimé : " + response.likedByUsers.join(", ")
+                : "Aucun usager n'a encore aimé";
+            icon.siblings('.likesCount').attr('title', tooltipText);
+
+            if (response.isLiked) {
+                icon.removeClass('fa-regular').addClass('fa-solid');
+            } else {
+                icon.removeClass('fa-solid').addClass('fa-regular');
+            }
+        }
+
+        function mediaDetailsPostRefresh() {
+            highlightKeyword();
+            loadLikesInfo();
+        }
+
+        function highlightKeyword() {
+            if ("@search" == "True") {
+                let keyword = "@SearchString";
+                if (keyword.length > 0) {
+                     let titles = document.getElementsByClassName('mediaTitle');
+                     Array.from(titles).forEach(title => {
+                         highlight(keyword, title);
+                     });
+                     let descriptions = document.getElementsByClassName('mediaDescription');
+                     Array.from(descriptions).forEach(description => {
+                         highlight(keyword, description);
+                     })
+                }
+            }
+        }
+    </script>
+}
