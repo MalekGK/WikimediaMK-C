@@ -10,6 +10,46 @@ using static Controllers.AccessControl;
 [UserAccess(Access.View)]
 public class MediasController : Controller
 {
+   // Trouvé sur Internet
+   private void MarkLikesChanged()
+   {
+      string newVersion = Guid.NewGuid().ToString();
+      HttpContext.Application["LikesVersion"] = newVersion;
+      Debug.WriteLine($"[LIKES] Version changée: {newVersion.Substring(0, 8)}...");
+   }
+
+   // Trouvé avec internet
+   private bool LikesHasChanged()
+   {
+      // Obtenir la version globale des likes
+      string appVersion = (string)HttpContext.Application["LikesVersion"];
+
+      // Si aucune version globale n'existe, en créer une
+      if (appVersion == null)
+      {
+         appVersion = Guid.NewGuid().ToString();
+         HttpContext.Application["LikesVersion"] = appVersion;
+      }
+
+      // Obtenir la dernière version vue par cette session
+      string sessionVersion = (string)Session["LikesVersionSeen"];
+
+      // Si la session n'a jamais vu de version, initialiser avec la version actuelle
+      if (sessionVersion == null)
+      {
+         Session["LikesVersionSeen"] = appVersion;
+         return false; // Première vérification = pas de changement
+      }
+
+      // Comparer : si différent, il y a eu un changement
+      if (sessionVersion != appVersion)
+      {
+         Session["LikesVersionSeen"] = appVersion;
+         return true; // Changement détecté !
+      }
+
+      return false; // Pas de changement
+   }
 
    private void InitSessionVariables()
    {
@@ -206,7 +246,7 @@ public class MediasController : Controller
 
          int mediaId = (int)Session["CurrentMediaId"];
          Media Media = DB.Medias.Get(mediaId);
-         if (DB.Users.HasChanged || DB.Medias.HasChanged || DB.Likes.HasChanged || forceRefresh)
+         if (DB.Users.HasChanged || DB.Medias.HasChanged || LikesHasChanged() || forceRefresh)
          {
             return PartialView(Media);
          }
@@ -224,7 +264,7 @@ public class MediasController : Controller
          {
             if (DB.Users.HasChanged ||
                 DB.Medias.HasChanged ||
-                DB.Likes.HasChanged ||
+                LikesHasChanged() ||
                 forceRefresh)
             {
                InitSessionVariables();
@@ -444,7 +484,7 @@ public class MediasController : Controller
       }
 
       // Marquer les données comme modifiées pour déclencher le rafraîchissement automatique
-      DB.Likes.MarkHasChanged();
+      MarkLikesChanged();
       DB.Medias.MarkHasChanged();
 
       Media media = DB.Medias.Get(mediaId);

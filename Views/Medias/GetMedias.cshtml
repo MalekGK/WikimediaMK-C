@@ -28,8 +28,7 @@
                 <div style="display: grid; grid-template-columns: auto 120px; align-items: last baseline ">
 
                     <div style="margin-left: 4px; color: gray; font-size: 0.65em">@media.Category  @Helper.When(media.PublishDate) </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 5px; align-items: center; padding-right: 4px;
-                        cursor: pointer; color: dodgerblue">
+                    <div style="display: flex; justify-content: flex-end; align-items: center; padding-right: 4px;">
                         @{
                             var likedByUsers = media.LikedByUsers;
                             var usersNames = string.Join(", ", likedByUsers.Select(u => u.Name));
@@ -37,8 +36,10 @@
                             var isLiked = media.IsLikedByConnectedUser();
                             var iconClass = isLiked ? "fa-solid fa-thumbs-up" : "fa-regular fa-thumbs-up";
                         }
-                        <span class="likesCount" title="@tooltipText">@media.Likes</span>
-                        <i class="cmdIconSmall @iconClass toggleLikeCmd" mediaId="@media.Id"></i>
+                        <div style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <span class="likesCount" title="@tooltipText" style="font-weight: bold; color: #1877f2; font-size: 0.9em;">@media.Likes</span>
+                            <i class="@iconClass toggleLikeCmd" mediaId="@media.Id" style="color: #1877f2; font-size: 1.1em;"></i>
+                        </div>
                     </div>
 
                 </div>
